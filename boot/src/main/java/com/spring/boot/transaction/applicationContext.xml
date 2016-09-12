@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:oauth="http://www.springframework.org/schema/security/oauth2"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.1.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+		http://www.springframework.org/schema/security/oauth2 http://www.springframework.org/schema/security/spring-security-oauth2-2.0.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+		http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa-1.8.xsd
+		http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.1.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd
+		http://www.springframework.org/schema/jdbc
+	    http://www.springframework.org/schema/jdbc/spring-jdbc-4.2.xsd">
+	
+	<!-- 使Spring关注Annotation -->
+	<context:annotation-config />
+	
+	<!-- 让Spring通过自动扫描来查询和管理Bean -->
+	<context:component-scan base-package="com.spring.boot.transaction"></context:component-scan>
+	
+	<bean id="dataSource1" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<property name="url" value="jdbc:mysql://localhost:3306/mybatis?useUnicode=true&amp;characterEncoding=UTF-8&amp;allowMultiQueries=true" />
+		<property name="username" value="root" />
+		<property name="password" value="" />
+		<property name="filters" value="stat" />
+		<!-- 连接池最大使用连接数量 -->
+		<property name="maxActive" value="100" />
+		<!-- 初始化连接大小 -->
+		<property name="initialSize" value="5" />
+		<!-- 获取连接最大等待时间 -->
+		<property name="maxWait" value="60000" />
+		<!-- 连接池最大空闲 -->
+		<property name="maxIdle" value="20" />
+		<!-- 连接池最小空闲 -->
+		<property name="minIdle" value="20" />
+
+		<property name="timeBetweenEvictionRunsMillis" value="3000" />
+		<property name="minEvictableIdleTimeMillis" value="300000" />
+		<property name="validationQuery" value="SELECT 'x'" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+	</bean>
+
+	<!-- 数据源配置 -->
+	<bean id="dataSource2" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<property name="url" value="jdbc:mysql://localhost:3306/wx?useUnicode=true&amp;characterEncoding=UTF-8&amp;allowMultiQueries=true" />
+		<property name="username" value="root" />
+		<property name="password" value="" />
+		<property name="filters" value="stat" />
+		<!-- 连接池最大使用连接数量 -->
+		<property name="maxActive" value="100" />
+		<!-- 初始化连接大小 -->
+		<property name="initialSize" value="5" />
+		<!-- 获取连接最大等待时间 -->
+		<property name="maxWait" value="60000" />
+		<!-- 连接池最大空闲 -->
+		<property name="maxIdle" value="20" />
+		<!-- 连接池最小空闲 -->
+		<property name="minIdle" value="20" />
+
+		<property name="timeBetweenEvictionRunsMillis" value="3000" />
+		<property name="minEvictableIdleTimeMillis" value="300000" />
+		<property name="validationQuery" value="SELECT 'x'" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+	</bean>
+
+	<!-- <jdbc:initialize-database data-source="dataSource2"
+		ignore-failures="ALL">
+		<jdbc:script location="classpath:database/transaction/create-table2.sql" />
+	</jdbc:initialize-database>
+	
+	
+	<jdbc:initialize-database data-source="dataSource1"
+		ignore-failures="ALL">
+		<jdbc:script location="classpath:database/transaction/create-table1.sql" />
+	</jdbc:initialize-database> -->
+	
+	
+
+   <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"> 
+		<property name="dataSource" ref="dataSource1" /> </bean> 
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+	<bean id="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">
+	<property name="transactionManager" ref="transactionManager"></property>
+	</bean>
+	
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+	  <tx:attributes>
+	     <tx:method name="update*" propagation="REQUIRED"/>
+	  </tx:attributes>
+	</tx:advice>
+	<aop:config>
+	<aop:advisor advice-ref="txAdvice" pointcut="execution(* com.spring.boot.transaction.service.ClientService.*(..))"/>
+	</aop:config>
+	
+   <bean id="dataSource" class="com.spring.boot.transaction.util.DynamicDataSource">
+		<property name="targetDataSources">
+			<map key-type="java.lang.String">
+				<!-- write -->
+				<entry key="master" value-ref="dataSource1" />
+				<!-- read -->
+				<entry key="slave" value-ref="dataSource2" />
+			</map>
+
+		</property>
+		<property name="defaultTargetDataSource" ref="dataSource1" />
+	</bean>
+	
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+	<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+	<!-- 配置数据库注解aop-->
+	<bean id="dataSourceAspect" class="com.spring.boot.transaction.util.DataSourceAspect"/>
+	<aop:config>
+		<aop:aspect id="c" ref="dataSourceAspect">
+			<aop:pointcut id="tx"
+				expression="execution(* com.spring.boot.transaction.dao.ClientDao.*(..))" />
+			<aop:before pointcut-ref="tx" method="before" />
+		</aop:aspect>
+		
+		
+	</aop:config>
+     
+     <bean id="clientDao" class="com.spring.boot.transaction.dao.ClientDao"></bean>
+     
+     <bean id="clientService" class="com.spring.boot.transaction.service.ClientService"></bean>
+	
+</beans>

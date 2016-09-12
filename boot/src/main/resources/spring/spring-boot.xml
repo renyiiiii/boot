@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.1.xsd 
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-3.1.xsd 
+	http://www.springframework.org/schema/jee 
+	http://www.springframework.org/schema/jee/spring-jee-3.1.xsd 
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.1.xsd
+	http://www.springframework.org/schema/jdbc
+	http://www.springframework.org/schema/jdbc/spring-jdbc-4.2.xsd">
+
+
+
+	<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool"
+		destroy-method="dispose">
+		<constructor-arg>
+			<bean class="org.h2.jdbcx.JdbcDataSource">
+				<!-- 内存模式 -->
+				<property name="URL" value="jdbc:h2:mem:test" />
+				<!-- 文件模式 -->
+				<!-- <property name="URL" value="jdbc:h2:testRestDB" /> -->
+				<property name="user" value="sa" />
+				<property name="password" value="sa" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<!-- 初始化数据表结构 -->
+	<jdbc:initialize-database data-source="dataSource"
+		ignore-failures="ALL">
+		<jdbc:script location="classpath:database/h2/create-table.sql" />
+	</jdbc:initialize-database>
+
+	<bean name="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="oAuth2Realm" class="com.spring.boot.oauth2client.realm.OAuth2Realm">
+		<property name="cachingEnabled" value="true" />
+		<property name="authenticationCachingEnabled" value="true" />
+		<property name="authenticationCacheName" value="authenticationCache" />
+		<property name="authorizationCachingEnabled" value="true" />
+		<property name="authorizationCacheName" value="authorizationCache" />
+		<property name="clientId" value="ci1" />
+		<property name="clientSecret" value="cs1" />
+		<property name="accessTokenUrl" value="http://localhost:8580/boot/accessToken" />
+		<property name="userInfoUrl" value="http://localhost:8580/boot/userInfo" />
+		<property name="redirectUrl"
+			value="http://localhost:8580/boot/oauth2/client/login" />
+	</bean>
+
+	<bean id="oAuth2AuthenticationFilter"
+		class="com.spring.boot.oauth2client.filter.OAuth2AuthenticationFilter">
+		<property name="authcCodeParam" value="code" />
+		<property name="failureUrl" value="/oauth2Failure.jsp" />
+	</bean>
+
+
+</beans>
